@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -26,7 +30,9 @@ namespace standardmetricdemo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            var aiOptions = new ApplicationInsightsServiceOptions();
+            aiOptions.ConnectionString = "InstrumentationKey=457e0aaf-fd2a-4e37-8df1-18c95bb66ca3;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/";
+            services.AddApplicationInsightsTelemetry(aiOptions);
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -35,8 +41,12 @@ namespace standardmetricdemo
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, TelemetryConfiguration tc)
         {
+            var builder = tc.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+            builder.Use((next) => new DropAllButMetricsProcessor(next));
+            builder.Build();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -54,6 +64,27 @@ namespace standardmetricdemo
             {
                 endpoints.MapControllers();
             });
+        }
+    }
+
+    internal class DropAllButMetricsProcessor : ITelemetryProcessor
+    {
+        private ITelemetryProcessor next;
+        public DropAllButMetricsProcessor(ITelemetryProcessor next)
+        {
+            this.next = next;
+        }
+
+        public void Process(ITelemetry item)
+        {
+            if (item is MetricTelemetry)
+            {
+                this.next.Process(item);
+            }
+            else
+            {
+                return;
+            }
         }
     }
 }
