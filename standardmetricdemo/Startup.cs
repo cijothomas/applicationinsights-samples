@@ -31,7 +31,10 @@ namespace standardmetricdemo
         public void ConfigureServices(IServiceCollection services)
         {
             var aiOptions = new ApplicationInsightsServiceOptions();
-            aiOptions.ConnectionString = "InstrumentationKey=457e0aaf-fd2a-4e37-8df1-18c95bb66ca3;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/";
+            // aiOptions.ConnectionString = "InstrumentationKey=457e0aaf-fd2a-4e37-8df1-18c95bb66ca3;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/";
+            aiOptions.ConnectionString = "InstrumentationKey=37b3dc54-9164-46b5-9b59-2d690c6fb409;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/";
+            aiOptions.EnableHeartbeat = false;
+            aiOptions.EnablePerformanceCounterCollectionModule = false;
             services.AddApplicationInsightsTelemetry(aiOptions);
             services.AddControllers();
             services.AddSwaggerGen(c =>
