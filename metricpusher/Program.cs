@@ -12,15 +12,32 @@ namespace metricpusher
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            var config = TelemetryConfiguration.CreateDefault();
-            config.ConnectionString = "InstrumentationKey=2a56f42a-89b7-43ed-9e09-ca851523b16a;IngestionEndpoint=https://westus2-2.in.applicationinsights.azure.com/"; // demo1
-            config.TelemetryInitializers.Add(new MyRoleInstanceInitialier());
-            config.TelemetryInitializers.Add(new MyRoleNameInitialier());
-            config.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Use((next) => new AutocollectedMetricsExtractor(next));
-            config.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Use((next) => new TelemetryDropper(next));
-            config.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Build();
-            var client = new TelemetryClient(config);
-            PushMetric(client);
+            var t1 = Task.Run(() => {
+                var config = TelemetryConfiguration.CreateDefault();
+                config.ConnectionString = "InstrumentationKey=f1afc505-f075-4801-8d6b-85eb390569f8;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/"; // classic
+                config.TelemetryInitializers.Add(new MyRoleInstanceInitialier());
+                config.TelemetryInitializers.Add(new MyRoleNameInitialier());
+                config.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Use((next) => new AutocollectedMetricsExtractor(next));
+                config.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Use((next) => new TelemetryDropper(next));
+                config.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Build();
+                var client = new TelemetryClient(config);
+                PushMetric(client);
+            });
+
+            var t2 = Task.Run(() => {
+
+                var config2 = TelemetryConfiguration.CreateDefault();
+                config2.ConnectionString = "InstrumentationKey=2a56f42a-89b7-43ed-9e09-ca851523b16a;IngestionEndpoint=https://westus2-2.in.applicationinsights.azure.com/"; // workspace
+                config2.TelemetryInitializers.Add(new MyRoleInstanceInitialier());
+                config2.TelemetryInitializers.Add(new MyRoleNameInitialier());
+                config2.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Use((next) => new AutocollectedMetricsExtractor(next));
+                config2.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Use((next) => new TelemetryDropper(next));
+                config2.DefaultTelemetrySink.TelemetryProcessorChainBuilder.Build();
+                var client2 = new TelemetryClient(config2);
+                PushMetric(client2);
+            });
+
+            Task.WaitAll(t1, t2);
         }
 
         private static void PushMetric(TelemetryClient telemetryClient)
